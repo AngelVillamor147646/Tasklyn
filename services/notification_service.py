@@ -84,6 +84,20 @@ def schedule_class_reminder(schedule: Schedule) -> None:
                     scheduled_at=remind_dt.strftime("%Y-%m-%d %H:%M"),
                     ref_id=schedule.id,
                 )
+
+            # --- new: notify when the class is done ---
+            end_dt = datetime.combine(
+                target_date,
+                datetime.strptime(schedule.end_time, "%H:%M").time(),
+            )
+            repo.schedule(
+                user_id=user.id, notif_type="class_reminder",
+                title=f"✅ {schedule.title}",
+                body=f"Class '{schedule.title}' is done.",
+                scheduled_at=end_dt.strftime("%Y-%m-%d %H:%M"),
+                ref_id=schedule.id,
+            )
+            # --- end new ---
         except:
             pass
 
