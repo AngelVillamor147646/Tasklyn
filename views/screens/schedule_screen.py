@@ -228,7 +228,9 @@ class ScheduleScreen(MDScreen):
         self._dialog.open()
 
     def _open_time_picker(self, which: str):
+        from kivymd.app import MDApp
         from kivymd.uix.pickers import MDTimePicker
+        MDApp.get_running_app().theme_cls.device_orientation = "portrait"
         picker = MDTimePicker()
         picker.bind(time=lambda inst, t: self._on_time_picked(which, t))
         picker.open()
