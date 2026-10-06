@@ -1,4 +1,4 @@
-"""Skill repository — definitions and per-user XP/level tracking."""
+v"""Skill repository — definitions and per-user XP/level tracking."""
 from __future__ import annotations
 import sqlite3
 from database.repositories.base import BaseRepository
