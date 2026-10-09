@@ -58,35 +58,46 @@ Builder.load_string("""
 from datetime import datetime, date, timedelta
 
 class CountdownLabel(MDLabel):
-    def __init__(self, target_time_str: str, **kwargs):
+    def __init__(self, start_time_str: str, end_time_str: str, **kwargs):
         super().__init__(**kwargs)
         self.font_style = "Caption"
-        self.theme_text_color = "Primary"
+        self.theme_text_color = "Custom"
         self.bold = True
-        
-        # parse HH:MM
+
         try:
-            h, m = map(int, target_time_str.split(':'))
             now = datetime.now()
-            # We assume the schedule is for today, if the tab is today
-            self.target_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
-            self._update_event = Clock.schedule_interval(self.update_timer, 1)
+            sh, sm = map(int, start_time_str.split(':'))
+            eh, em = map(int, end_time_str.split(':'))
+            self.start_dt = now.replace(hour=sh, minute=sm, second=0, microsecond=0)
+            self.end_dt = now.replace(hour=eh, minute=em, second=0, microsecond=0)
+            self._update_event = Clock.schedule_interval(self._tick, 1)
             self.update_timer()
-        except:
+        except Exception:
             self.text = ""
+
+    def _tick(self, *_):
+        # Stop if this card was removed (screen refreshed)
+        if self.parent is None:
+            self._update_event.cancel()
+            return
+        self.update_timer()
 
     def update_timer(self, *_):
         now = datetime.now()
-        diff = self.target_dt - now
-        if diff.total_seconds() <= 0:
-            self.text = "In Progress / Passed"
-            if hasattr(self, '_update_event'):
+        if now >= self.end_dt:
+            self.text = "Done"
+            self.text_color = [0.6, 0.6, 0.65, 1]      # grey
+            if hasattr(self, "_update_event"):
                 self._update_event.cancel()
+        elif now >= self.start_dt:
+            self.text = "In Progress"
+            self.text_color = [0.2, 0.75, 0.4, 1]      # green
         else:
-            s = int(diff.total_seconds())
+            s = int((self.start_dt - now).total_seconds())
             h, r = divmod(s, 3600)
             m, sec = divmod(r, 60)
             self.text = f"Starts in: {h}h {m}m {sec}s"
+            self.text_color = [0.7, 0.7, 0.8, 1]
 
 class ScheduleScreen(MDScreen):
     def __init__(self, user_id: int, **kwargs):
@@ -159,21 +170,32 @@ class ScheduleScreen(MDScreen):
         # Add countdown timer if it's today
         import datetime
         if self._selected_day == datetime.date.today().weekday():
-            timer = CountdownLabel(sc.start_time)
+            timer = CountdownLabel(sc.start_time, sc.end_time)
             col.add_widget(timer)
 
         card.add_widget(col)
-        # Delete button
+                # Edit + delete buttons
+        btns = MDBoxLayout(orientation="vertical", size_hint=(None, None),
+                           size=(dp(36), dp(76)), spacing=dp(4),
+                           pos_hint={"center_y": 0.5})
+        edit_btn = MDIconButton(icon="pencil-outline", icon_size="18sp",
+                                size_hint=(None, None), size=(dp(36), dp(36)),
+                                on_release=lambda *_, s=sc: self.open_add_dialog(s))
         del_btn = MDIconButton(icon="delete-outline", icon_size="18sp",
                                size_hint=(None, None), size=(dp(36), dp(36)),
                                on_release=lambda *_, sid=sc.id: self._delete(sid))
-        card.add_widget(del_btn)
+        btns.add_widget(edit_btn)
+        btns.add_widget(del_btn)
+        card.add_widget(btns)
         return card
 
-    def open_add_dialog(self):
+    def open_add_dialog(self, sc=None):
+        self._editing = sc
+        self._start_value = ""
+        self._end_value = ""
         from services.schedule_service import get_subjects
         subjects = get_subjects(self.user_id)
-        
+
         content = MDBoxLayout(orientation="vertical", spacing=dp(16),
                               size_hint_y=None, padding=dp(8))
         content.bind(minimum_height=content.setter('height'))
@@ -195,15 +217,32 @@ class ScheduleScreen(MDScreen):
                   self._s_room, self._s_instr, self._s_notes, self._s_remind]:
             content.add_widget(w)
 
+        # ── NEW: fill in the fields when editing ──
+        edit_days = [self._selected_day]
+        if sc:
+            import json
+            self._s_title.text = sc.title or ""
+            self._s_room.text = sc.room or ""
+            self._s_instr.text = sc.instructor or ""
+            self._s_notes.text = sc.notes or ""
+            self._s_remind.text = str(getattr(sc, "reminder_minutes", 15) or 15)
+            self._start_value = sc.start_time
+            self._end_value = sc.end_time
+            self._s_start.text = datetime.strptime(sc.start_time, "%H:%M").strftime("%I:%M %p").lstrip("0")
+            self._s_end.text = datetime.strptime(sc.end_time, "%H:%M").strftime("%I:%M %p").lstrip("0")
+            try:
+                edit_days = [int(x) for x in json.loads(sc.days)]
+            except Exception:
+                pass
+
         content.add_widget(MDLabel(text="Select Days:", font_style="Subtitle2", size_hint_y=None, height=dp(24)))
         days_box = MDGridLayout(cols=3, size_hint_y=None, spacing=dp(4))
-        days_box.bind(minimum_height=days_box.setter('height'))
         
         self._day_checks = []
         for i, name in enumerate(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]):
             row = MDBoxLayout(orientation="horizontal", size_hint_y=None, height=dp(40))
             cb = MDCheckbox(size_hint=(None, None), size=(dp(40), dp(40)))
-            if i == self._selected_day: cb.active = True
+            if i in edit_days: cb.active = True
             self._day_checks.append((i, cb))
             row.add_widget(cb)
             row.add_widget(MDLabel(text=name))

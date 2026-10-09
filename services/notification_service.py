@@ -23,6 +23,14 @@ def _send_now(title: str, message: str, ticker: str = "") -> None:
     except Exception as exc:
         log.warning("Plyer notification failed: %s", exc)
 
+    try:
+        from kivymd.app import MDApp
+        app = MDApp.get_running_app()
+        if app:
+            app.show_in_app_alert(title, message)
+    except Exception as exc:
+        log.warning("In-app alert failed: %s", exc)
+
 
 def send_notification(title: str, body: str) -> None:
     _send_now(title, body)
@@ -85,7 +93,7 @@ def schedule_class_reminder(schedule: Schedule) -> None:
                     ref_id=schedule.id,
                 )
 
-            # --- new: notify when the class is done ---
+            # ── NEW: class finished notification ──
             end_dt = datetime.combine(
                 target_date,
                 datetime.strptime(schedule.end_time, "%H:%M").time(),
@@ -93,14 +101,12 @@ def schedule_class_reminder(schedule: Schedule) -> None:
             repo.schedule(
                 user_id=user.id, notif_type="class_reminder",
                 title=f"✅ {schedule.title}",
-                body=f"Class '{schedule.title}' is done.",
+                body=f"Class '{schedule.title}' is done. Great job!",
                 scheduled_at=end_dt.strftime("%Y-%m-%d %H:%M"),
                 ref_id=schedule.id,
             )
-            # --- end new ---
         except:
             pass
-
 
 def send_pomodoro_notification(kind: str = "work") -> None:
     if kind == "work":

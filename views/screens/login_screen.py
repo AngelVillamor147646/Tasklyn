@@ -45,6 +45,8 @@ Builder.load_string("""
             orientation: 'vertical'
             padding: dp(24)
             spacing: dp(20)
+            size_hint_x: None
+            width: min(dp(420), root.width - dp(64))
             size_hint_y: None
             height: self.minimum_height
             pos_hint: {'center_x': .5}
@@ -61,15 +63,25 @@ Builder.load_string("""
                 mode: 'fill'
                 radius: [dp(10)]
 
-            MDTextField:
-                id: password_field
-                hint_text: 'Password'
-                icon_left: 'lock'
-                password: True
+            MDRelativeLayout:
                 size_hint_y: None
                 height: dp(56)
-                mode: 'fill'
-                radius: [dp(10)]
+
+                MDTextField:
+                    id: password_field
+                    hint_text: 'Password'
+                    icon_left: 'lock'
+                    password: True
+                    mode: 'fill'
+                    radius: [dp(10)]
+
+                MDIconButton:
+                    icon: 'eye-off'
+                    pos_hint: {'center_y': .5}
+                    pos: password_field.width - self.width + dp(8), 0
+                    on_release:
+                        self.icon = 'eye' if self.icon == 'eye-off' else 'eye-off'
+                        password_field.password = not password_field.password
                 
             Widget:
                 size_hint_y: None
