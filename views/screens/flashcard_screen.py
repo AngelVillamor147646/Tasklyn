@@ -5,6 +5,7 @@ Deck management, markdown import, card study with MCQ + identification,
 mistake repetition, score tracking, and accuracy display.
 """
 from __future__ import annotations
+from kivymd.uix.filemanager import MDFileManager
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.metrics import dp
@@ -27,7 +28,8 @@ Builder.load_string("""
         MDTopAppBar:
             title: 'Flashcards'
             elevation: 0
-            right_action_items: [['file-import', lambda x: root.open_import_dialog()], ['plus-circle', lambda x: root.open_create_deck_dialog()]]
+            left_action_items: [['arrow-left', lambda x: root.go_back()]]
+            right_action_items: [['file-upload-outline', lambda x: root.open_lesson_picker()], ['file-import', lambda x: root.open_import_dialog()], ['plus-circle', lambda x: root.open_create_deck_dialog()]]
 
         MDScrollView:
             MDBoxLayout:
@@ -50,18 +52,9 @@ class FlashcardScreen(MDScreen):
     def on_enter(self):
         self._refresh()
 
-    def _refresh(self, *_):
-        from services.flashcard_service import get_decks
-        decks = get_decks(self.user_id)
-        box = self.ids.deck_list
-        box.clear_widgets()
-        if not decks:
-            box.add_widget(MDLabel(text="No flashcard decks yet.\nImport a Markdown file or create a deck.",
-                                   halign="center", theme_text_color="Hint",
-                                   font_style="Body2", size_hint_y=None, height=dp(80)))
-        for deck in decks:
-            card = self._make_deck_card(deck)
-            box.add_widget(card)
+    def go_back(self):
+        self.manager.current = "main"
+
 
     def _make_deck_card(self, deck) -> MDCard:
         from utils.helpers import hex_to_kivy_colour
@@ -71,8 +64,9 @@ class FlashcardScreen(MDScreen):
         with card.canvas.before:
             from kivy.graphics import Color, RoundedRectangle
             Color(*hex_to_kivy_colour(deck.color))
-            RoundedRectangle(pos=(card.x, card.y + dp(6)),
-                             size=(dp(4), dp(68)), radius=[dp(4)])
+            bar = RoundedRectangle(pos=(card.x, card.y + dp(6)),
+                                   size=(dp(4), dp(68)), radius=[dp(4)])
+        card.bind(pos=lambda inst, val: setattr(bar, "pos", (inst.x, inst.y + dp(6))))
         col = MDBoxLayout(orientation="vertical")
         col.add_widget(MDLabel(text=f"[b]{deck.name}[/b]", markup=True,
                                font_style="Subtitle1"))
@@ -93,7 +87,21 @@ class FlashcardScreen(MDScreen):
         btn_row.add_widget(del_btn)
         card.add_widget(btn_row)
         return card
+    
+    def _refresh(self, *_):
+        from services.flashcard_service import get_decks
+        decks = get_decks(self.user_id)
+        box = self.ids.deck_list
+        box.clear_widgets()
+        if not decks:
+            box.add_widget(MDLabel(text="No flashcard decks yet.\nImport a Markdown file or create a deck.",
+                                   halign="center", theme_text_color="Hint",
+                                   font_style="Body2", size_hint_y=None, height=dp(80)))
+        for deck in decks:
+            card = self._make_deck_card(deck)
+            box.add_widget(card)
 
+   
     # ── Deck creation ─────────────────────────────────────────────────────
 
     def open_create_deck_dialog(self):
@@ -186,6 +194,89 @@ class FlashcardScreen(MDScreen):
             buttons=[MDFlatButton(text="CLOSE", on_release=lambda *_: dlg.dismiss())],
         )
         dlg.open()
+
+        # ── Lesson upload ─────────────────────────────────────────────────────
+
+    def open_lesson_picker(self):
+        import os
+        if not hasattr(self, "_file_manager"):
+            self._file_manager = MDFileManager(
+                exit_manager=lambda *_: self._file_manager.close(),
+                select_path=self._on_lesson_selected,
+                ext=[".pdf", ".docx", ".txt", ".md"],
+            )
+        self._file_manager.show(os.path.expanduser("~"))
+
+    def _on_lesson_selected(self, path: str):
+        import os
+        from services.flashcard_service import generate_from_lesson
+        self._file_manager.close()
+        if os.path.isdir(path):
+            return
+        ok, err, questions = generate_from_lesson(path)
+        if not ok:
+            Snackbar(text=err).open()
+            return
+        self._lesson_name = os.path.splitext(os.path.basename(path))[0]
+        self._lesson_questions = questions
+        self._show_lesson_preview()
+
+    def _show_lesson_preview(self):
+        if getattr(self, "_dialog", None):
+            self._dialog.dismiss()
+
+        content = MDBoxLayout(orientation="vertical", spacing=dp(8),
+                               size_hint_y=None, height=dp(440))
+        self._lesson_title = MDTextField(text=self._lesson_name,
+                                         hint_text="Deck name",
+                                         size_hint_y=None, height=dp(48))
+        content.add_widget(self._lesson_title)
+        scroll = MDScrollView()
+        self._lesson_list = MDBoxLayout(orientation="vertical", spacing=dp(6),
+                                        size_hint_y=None, adaptive_height=True)
+        scroll.add_widget(self._lesson_list)
+        content.add_widget(scroll)
+        self._fill_lesson_list()
+
+        self._dialog = MDDialog(
+            title="Review generated questions", type="custom", content_cls=content,
+            buttons=[
+                MDFlatButton(text="CANCEL", on_release=lambda *_: self._dialog.dismiss()),
+                MDRaisedButton(text="SAVE DECK", on_release=self._save_lesson_deck),
+            ],
+        )
+        self._dialog.open()
+
+    def _fill_lesson_list(self):
+        self._lesson_list.clear_widgets()
+        for i, q in enumerate(self._lesson_questions):
+            row = MDBoxLayout(orientation="horizontal", size_hint_y=None,
+                              height=dp(90), spacing=dp(4))
+            kind = "MCQ" if q["q_type"] == "multiple_choice" else "ID"
+            row.add_widget(MDLabel(
+                text=f"[b]{i + 1}. [{kind}][/b] {q['question']}\n[i]Answer: {q['answer']}[/i]",
+                markup=True, font_style="Caption"))
+            row.add_widget(MDIconButton(
+                icon="delete-outline", icon_size="20sp",
+                pos_hint={"center_y": 0.5},
+                on_release=lambda *_, idx=i: self._remove_lesson_question(idx)))
+            self._lesson_list.add_widget(row)
+
+    def _remove_lesson_question(self, idx: int):
+        del self._lesson_questions[idx]
+        self._fill_lesson_list()
+
+    def _save_lesson_deck(self, *_):
+        from services.flashcard_service import save_generated_deck
+        if not self._lesson_questions:
+            Snackbar(text="No questions left to save.").open()
+            return
+        ok, msg, _deck = save_generated_deck(
+            self.user_id, self._lesson_title.text, self._lesson_questions)
+        if ok:
+            self._dialog.dismiss()
+            self._refresh()
+        Snackbar(text=msg).open()
 
     # ── Study session ─────────────────────────────────────────────────────
 

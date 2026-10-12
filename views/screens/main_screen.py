@@ -49,11 +49,11 @@ Builder.load_string("""
             on_tab_press: root.on_tab_press('pomodoro')
 
         MDBottomNavigationItem:
-            id: habits
-            name: 'habits'
-            text: 'Habits'
-            icon: 'star-outline'
-            on_tab_press: root.on_tab_press('habits')
+            id: flashcards
+            name: 'flashcards'
+            text: 'Cards'
+            icon: 'cards-outline'
+            on_tab_press: root.on_tab_press('flashcards')
 
         MDBottomNavigationItem:
             id: analytics
@@ -90,8 +90,9 @@ class MainScreen(MDScreen):
             "tasks":      TaskScreen(user_id=uid),
             "schedule":   ScheduleScreen(user_id=uid),
             "pomodoro":   PomodoroScreen(user_id=uid),
-            "habits":     SkillsScreen(user_id=uid),  # Using SkillsScreen for habits
+            "flashcards": self.ids.flashcards,
             "analytics":  StatisticsScreen(user_id=uid),
+            "flashcards": FlashcardScreen(user_id=uid),   # <-- add this
             "badges":     BadgesScreen(user_id=uid),
             "reflection": ReflectionScreen(user_id=uid),
             "settings":   SettingsScreen(user_id=uid),
@@ -102,7 +103,7 @@ class MainScreen(MDScreen):
             "tasks":      self.ids.tasks,
             "schedule":   self.ids.schedule,
             "pomodoro":   self.ids.pomodoro,
-            "habits":     self.ids.habits,
+            "flashcards": self.ids.flashcards,
             "analytics":  self.ids.analytics,
         }
         for tab_name, tab_widget in tab_map.items():

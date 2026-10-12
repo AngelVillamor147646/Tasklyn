@@ -21,117 +21,124 @@ import re
 Builder.load_string("""
 <OnboardingScreen>:
     name: 'onboarding'
-    MDBoxLayout:
-        orientation: 'vertical'
-        padding: dp(32)
-        spacing: dp(20)
-
-        Image:
-            source: 'tasklyn_logo_clear.png'
-            size_hint: None, None
-            size: dp(120), dp(120)
-            pos_hint: {'center_x': .5}
-
-        MDLabel:
-            text: 'Welcome to Tasklyn'
-            font_style: 'H4'
-            bold: True
-            halign: 'center'
-            size_hint_y: None
-            height: dp(50)
-
-        MDLabel:
-            text: "Let's set up your profile"
-            font_style: 'Subtitle1'
-            halign: 'center'
-            theme_text_color: 'Secondary'
-            size_hint_y: None
-            height: dp(30)
-
-        MDCard:
+    ScrollView:
+        do_scroll_x: False
+        MDBoxLayout:
             orientation: 'vertical'
-            padding: dp(24)
-            spacing: dp(16)
-            size_hint_x: None
-            width: min(dp(420), root.width - dp(64))
+            padding: dp(32)
+            spacing: dp(20)
             size_hint_y: None
             height: self.minimum_height
-            pos_hint: {'center_x': .5}
-            radius: [dp(16)]
-            elevation: 2
-            md_bg_color: [1, 1, 1, 0.05] if app.theme_cls.theme_style == 'Dark' else [0, 0, 0, 0.02]
 
-            MDTextField:
-                id: name_field
-                hint_text: 'Your name'
-                icon_left: 'account'
+            Image:
+                source: 'tasklyn_logo_clear.png'
+                size_hint: None, None
+                size: dp(120), dp(120)
+                pos_hint: {'center_x': .5}
+
+            MDLabel:
+                text: 'Welcome to Tasklyn'
+                font_style: 'H4'
+                bold: True
+                halign: 'center'
                 size_hint_y: None
-                height: dp(56)
-                mode: 'fill'
-                radius: [dp(10)]
-                
-            MDRelativeLayout:
+                height: dp(50)
+
+            MDLabel:
+                text: "Let's set up your profile"
+                font_style: 'Subtitle1'
+                halign: 'center'
+                theme_text_color: 'Secondary'
                 size_hint_y: None
-                height: dp(56)
+                height: dp(30)
+
+            MDCard:
+                orientation: 'vertical'
+                padding: dp(24)
+                spacing: dp(16)
+                size_hint_x: None
+                width: min(dp(420), root.width - dp(64))
+                size_hint_y: None
+                height: self.minimum_height
+                pos_hint: {'center_x': .5}
+                radius: [dp(16)]
+                elevation: 2
+                md_bg_color: [1, 1, 1, 0.05] if app.theme_cls.theme_style == 'Dark' else [0, 0, 0, 0.02]
 
                 MDTextField:
-                    id: password_field
-                    hint_text: 'Password'
-                    icon_left: 'lock'
-                    password: True
+                    id: name_field
+                    hint_text: 'Your name'
+                    icon_left: 'account'
+                    size_hint_y: None
+                    height: dp(56)
                     mode: 'fill'
                     radius: [dp(10)]
 
-                MDIconButton:
-                    icon: 'eye-off'
-                    pos_hint: {'center_y': .5}
-                    pos: password_field.width - self.width + dp(8), 0
-                    on_release:
-                        self.icon = 'eye' if self.icon == 'eye-off' else 'eye-off'
-                        password_field.password = not password_field.password
-            
-            MDLabel:
-                text: '8+ characters, with a capital letter, number, and special character.'
-                font_style: 'Caption'
-                halign: 'left'
-                theme_text_color: 'Secondary'
-                size_hint_y: None
-                height: dp(20)
-
-            MDLabel:
-                text: 'Choose your avatar'
-                font_style: 'Subtitle2'
-                size_hint_y: None
-                height: dp(28)
-
-            ScrollView:
-                size_hint_y: None
-                height: dp(110)
-                MDGridLayout:
-                    id: avatar_grid
-                    cols: 4
-                    spacing: dp(10)
-                    padding: dp(4)
+                MDRelativeLayout:
                     size_hint_y: None
-                    height: self.minimum_height
+                    height: dp(56)
 
-            Widget:
-                size_hint_y: None
-                height: dp(10)
+                    MDTextField:
+                        id: password_field
+                        hint_text: 'Password'
+                        icon_left: 'lock'
+                        password: True
+                        mode: 'fill'
+                        radius: [dp(10)]
 
-            MDRaisedButton:
-                id: start_btn
-                text: 'GET STARTED'
-                font_style: 'Button'
-                bold: True
-                size_hint_x: 1
-                size_hint_y: None
-                height: dp(50)
-                md_bg_color: app.theme_cls.primary_color
-                on_release: root.on_start()
-                
-        Widget:
-            size_hint_y: 1
+                    MDIconButton:
+                        icon: 'eye-off'
+                        pos_hint: {'center_y': .5}
+                        pos: password_field.width - self.width + dp(8), 0
+                        on_release:
+                            self.icon = 'eye' if self.icon == 'eye-off' else 'eye-off'
+                            password_field.password = not password_field.password
+
+                MDLabel:
+                    text: '8+ characters, with a capital letter, number, and special character.'
+                    font_style: 'Caption'
+                    halign: 'left'
+                    theme_text_color: 'Secondary'
+                    size_hint_y: None
+                    height: dp(20)
+
+                MDLabel:
+                    text: 'Choose your avatar'
+                    font_style: 'Subtitle2'
+                    size_hint_y: None
+                    height: dp(28)
+
+                ScrollView:
+                    size_hint_y: None
+                    height: dp(110)
+                    MDGridLayout:
+                        id: avatar_grid
+                        cols: 4
+                        spacing: dp(10)
+                        padding: dp(4)
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                Widget:
+                    size_hint_y: None
+                    height: dp(10)
+
+                MDRaisedButton:
+                    id: start_btn
+                    text: 'GET STARTED'
+                    font_style: 'Button'
+                    bold: True
+                    size_hint_x: 1
+                    size_hint_y: None
+                    height: dp(50)
+                    md_bg_color: app.theme_cls.primary_color
+                    on_release: root.on_start()
+
+                MDFlatButton:
+                    text: "Already have an account? Log In"
+                    pos_hint: {'center_x': .5}
+                    size_hint_x: 1
+                    on_release: app.root.current = 'login'
 """)
 
 
