@@ -88,6 +88,40 @@ def import_from_markdown(
         return False, str(exc), None
 
 
+# ── Lesson upload (offline question generator) ─────────────────────────────
+
+def generate_from_lesson(file_path: str) -> tuple[bool, str, list]:
+    """Read a PDF/DOCX/TXT lesson and return (ok, error_message, questions)."""
+    from flashcards.lesson_generator import generate_from_file
+    try:
+        return True, "", generate_from_file(file_path)
+    except Exception as exc:
+        log.error("generate_from_lesson: %s", exc)
+        return False, str(exc), []
+
+
+def save_generated_deck(user_id: int, name: str, questions: list):
+    """Create a deck and insert the generated questions into it."""
+    import json
+    from database.connection import execute, commit
+    ok, err, deck = create_deck(user_id, name, description="Generated from lesson")
+    if not ok:
+        return False, err, None
+    try:
+        for q in questions:
+            execute(
+                "INSERT INTO flashcards (deck_id, question, answer, q_type, choices) "
+                "VALUES (?,?,?,?,?)",
+                (deck.id, q["question"], q["answer"], q["q_type"],
+                 json.dumps(q["choices"])),
+            )
+        commit()
+        _deck_repo.refresh_card_count(deck.id)
+        return True, f"Created deck with {len(questions)} questions.", deck
+    except Exception as exc:
+        log.error("save_generated_deck: %s", exc)
+        return False, str(exc), None
+
 # ── Study sessions ─────────────────────────────────────────────────────────
 
 def start_study_session(user_id: int, deck_id: int) -> FlashcardStudySession:

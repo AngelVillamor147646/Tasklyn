@@ -223,7 +223,8 @@ class DashboardScreen(MDScreen):
             )
             btn_card.add_widget(MDIconButton(
                 icon=icon, icon_size="24sp", theme_icon_color="Custom", icon_color=color,
-                pos_hint={"center_x": .5}, size_hint=(None, None), size=(dp(36), dp(36))
+                pos_hint={"center_x": .5}, size_hint=(None, None), size=(dp(36), dp(36)),
+                on_release=lambda *_, d=dest: self._nav(d)
             ))
             btn_card.add_widget(MDLabel(
                 text=label, font_style="Caption", halign="center", 
