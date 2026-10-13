@@ -99,6 +99,12 @@ Builder.load_string("""
                 on_release: root.on_login()
 
             MDFlatButton:
+                text: "Forgot password?"
+                pos_hint: {'center_x': .5}
+                size_hint_x: 1
+                on_release: root.go_to_forgot_password()
+                
+            MDFlatButton:
                 text: "Don't have an account? Sign Up"
                 pos_hint: {'center_x': .5}
                 size_hint_x: 1
@@ -131,9 +137,15 @@ class LoginScreen(MDScreen):
             sm.current = "main"
             Clock.schedule_interval(lambda _: app._dispatch_notifications(), 60)
             Clock.schedule_once(lambda _: app._auto_backup(), 2)
+            from services.auth_service import has_recovery_key
+            if not has_recovery_key(user):
+                Clock.schedule_once(lambda _: app.show_recovery_key_dialog(user.id), 1)
         else:
             Snackbar(text=err or "Invalid credentials.", notif_type="error").open()
 
+    def go_to_forgot_password(self):
+        MDApp.get_running_app().root.current = "forgot_password"
+        
     def go_to_signup(self):
         app = MDApp.get_running_app()
         app.root.current = "onboarding"

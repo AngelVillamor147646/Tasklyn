@@ -5,3 +5,7 @@ venv/
 .venv/
 
 Tasklyn/
+
+*.db
+*.sqlite3
+__pycache__/

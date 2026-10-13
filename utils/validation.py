@@ -67,6 +67,17 @@ def validate_name(name: str, field: str = "Name") -> ValidationResult:
         return err(f"{field} contains invalid characters.")
     return ok()
 
+def validate_password(password: str) -> ValidationResult:
+    """Password policy used at sign-up and password reset."""
+    if len(password) < 8:
+        return err("Password must be at least 8 characters.")
+    if not re.search(r"[A-Z]", password):
+        return err("Password must include an uppercase letter.")
+    if not re.search(r"[0-9]", password):
+        return err("Password must include a number.")
+    if not re.search(r"[^A-Za-z0-9]", password):
+        return err("Password must include a special character.")
+    return ok()
 
 # ---------------------------------------------------------------------------
 # Numeric

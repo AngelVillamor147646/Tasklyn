@@ -26,6 +26,7 @@ _TABLES: list[str] = [
         avatar_id   TEXT    NOT NULL DEFAULT 'boy_neutral',
         gender      TEXT    NOT NULL DEFAULT 'boy',
         password    TEXT,
+        recovery_key_hash TEXT,
         created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
         updated_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
     )

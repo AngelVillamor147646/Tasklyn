@@ -60,6 +60,25 @@ class TasklynApp(MDApp):
 
         Clock.schedule_once(_open)
 
+    def show_recovery_key_dialog(self, user_id: int):
+        from kivymd.uix.dialog import MDDialog
+        from kivymd.uix.button import MDFlatButton
+        from kivy.core.clipboard import Clipboard
+        from services.auth_service import generate_recovery_key
+
+        key = generate_recovery_key(user_id)
+        dialog = MDDialog(
+            title = "Save your recovery key",
+            text = (f"{key}\n\nIf you forget your password, this key is the only way "
+                    "to reset it. Write it down or take a screenshot - it won't shown again."),
+            auto_dismiss = False,
+            buttons = [
+                MDFlatButton(text = "COPY", on_release = lambda *a: Clipboard.copy(key)),
+                MDFlatButton(text = "SAVE IT", on_release = lambda *a: dialog.dismiss()),    
+            ],
+        )
+        dialog.open()
+
     def build(self):
         # ── Database bootstrap ──
         try:
@@ -93,10 +112,12 @@ class TasklynApp(MDApp):
         from views.screens.splash_screen     import SplashScreen
         from views.screens.onboarding_screen import OnboardingScreen
         from views.screens.login_screen      import LoginScreen
+        from views.screens.forgot_password_screen import ForgotPasswordScreen
 
         sm.add_widget(SplashScreen())
         sm.add_widget(OnboardingScreen())
         sm.add_widget(LoginScreen())
+        sm.add_widget(ForgotPasswordScreen())
 
         sm.current = "splash"
 
@@ -114,8 +135,7 @@ class TasklynApp(MDApp):
         sm.current = "main"
         Clock.schedule_interval(lambda _: self._dispatch_notifications(), 60)
         Clock.schedule_once(lambda _: self._auto_backup(), 2)
-        Clock.schedule_once(lambda _: self._auto_backup(), 2)
-        Clock.schedule_once(lambda _: self.show_in_app_alert("Test", "In-app alert works"), 3)  # temporary test
+        Clock.schedule_once(lambda _: self.show_recovery_key_dialog(user_id), 1)
 
     def _dispatch_notifications(self):
         if self._user_id:
