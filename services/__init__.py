@@ -1,6 +1,7 @@
 """Services package — public re-exports."""
 from services.auth_service import (
     is_first_launch, get_active_user, create_profile, update_profile, refresh_active_user,
+    authenticate, has_recovery_key, generate_recovery_key, reset_password,
 )
 from services.task_service import (
     get_user_tasks, get_today_tasks, get_upcoming_tasks, get_overdue_tasks,

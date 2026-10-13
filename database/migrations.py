@@ -1,4 +1,4 @@
-views"""
+"""
 Tasklyn — Database Migration Runner
 ======================================
 Version-based migration system. Each migration is a plain function that
@@ -130,6 +130,13 @@ def _update_schedules_and_skills() -> None:
     # user_skills drop/rebuild is skipped on purpose (see skill_repo.py)
     commit()
     log.info("Migration 3 checked (schedules).")
+
+@migration(4)
+def _add_recovery_key_hash_to_users() -> None:
+    if not _has_column("users", "recovery_key_hash"):
+        execute("ALTER TABLE users ADD COLUMN recovery_key_hash TEXT;")
+    commit()
+    log.info("Migration 4 checked (recovery_key_hash column).")
 
 # ---------------------------------------------------------------------------
 # Runner

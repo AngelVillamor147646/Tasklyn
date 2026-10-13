@@ -16,9 +16,26 @@ class UserRepository(BaseRepository[User]):
             avatar_id=row["avatar_id"],
             gender=row["gender"],
             password=row["password"] if "password" in row.keys() else None,
+            recovery_key_hash=row["recovery_key_hash"] if "recovery_key_hash" in row.keys() else None,
             created_at=row["created_at"],
             updated_at=row["updated_at"],
         )
+
+    def set_password(self, user_id: int, password: Optional[str]) -> bool:
+        cur = self._execute(
+            "UPDATE users SET password=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (password, user_id),
+        )
+        self._commit()
+        return cur.rowcount > 0
+
+    def set_recovery_key_hash(self, user_id: int, key_hash: str) -> bool:
+        cur = self._execute(
+            "UPDATE users SET recovery_key_hash=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (key_hash, user_id),
+        )
+        self._commit()
+        return cur.rowcount > 0
 
     def create(self, name: str, avatar_id: str = "boy_neutral", gender: str = "boy", password: Optional[str] = None) -> User:
         row_id = self._insert({"name": name, "avatar_id": avatar_id, "gender": gender, "password": password})

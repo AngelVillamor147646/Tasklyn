@@ -12,6 +12,7 @@ class User:
     avatar_id: str = "boy_neutral"
     gender: str = "boy"
     password: Optional[str] = None
+    recovery_key_hash: Optional[str] = None
     created_at: str = ""
     updated_at: str = ""
 
